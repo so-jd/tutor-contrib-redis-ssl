@@ -45,47 +45,46 @@ SEARCH_ENGINE = "search.meilisearch.MeilisearchEngine"
 
 # Common cache config
 # Redis protocol selection based on SECURE_REDIS flag
-REDIS_PROTOCOL = "{% if SECURE_REDIS %}rediss{% else %}redis{% endif %}"
 
 CACHES = {
     "default": {
         "KEY_PREFIX": "default",
         "VERSION": "1",
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "{{ REDIS_PROTOCOL }}://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}{% endif %}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}",
+        "LOCATION": "rediss://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}{% endif %}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}",
     },
     "general": {
         "KEY_PREFIX": "general",
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "{{ REDIS_PROTOCOL }}://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}{% endif %}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}",
+        "LOCATION": "rediss://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}{% endif %}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}",
     },
     "mongo_metadata_inheritance": {
         "KEY_PREFIX": "mongo_metadata_inheritance",
         "TIMEOUT": 300,
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "{{ REDIS_PROTOCOL }}://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}{% endif %}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}",
+        "LOCATION": "rediss://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}{% endif %}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}",
     },
     "configuration": {
         "KEY_PREFIX": "configuration",
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "{{ REDIS_PROTOCOL }}://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}{% endif %}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}",
+        "LOCATION": "rediss://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}{% endif %}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}",
     },
     "celery": {
         "KEY_PREFIX": "celery",
         "TIMEOUT": 7200,
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "{{ REDIS_PROTOCOL }}://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}{% endif %}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}",
+        "LOCATION": "rediss://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}{% endif %}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}",
     },
     "course_structure_cache": {
         "KEY_PREFIX": "course_structure",
         "TIMEOUT": 604800, # 1 week
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "{{ REDIS_PROTOCOL }}://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}{% endif %}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}",
+        "LOCATION": "rediss://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}{% endif %}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}",
     },
     "ora2-storage": {
         "KEY_PREFIX": "ora2-storage",
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "{{ REDIS_PROTOCOL }}://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}{% endif %}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}",
+        "LOCATION": "rediss://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}{% endif %}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}",
     }
 }
 
