@@ -1,0 +1,2 @@
+recursive-include tutorredis_ssl/patches *
+recursive-include tutorredis_ssl/templates *
