@@ -1,161 +1,270 @@
-import os
-from glob import glob
-
-import click
-import importlib_resources
 from tutor import hooks
 
-from .__about__ import __version__
+# Simplified Redis SSL Plugin for Tutor Open edX
+__version__ = "1.0.0"
 
-########################################
-# CONFIGURATION
-########################################
+# ============================================================================
+# 1. TUTOR CONFIGURATION DEFAULTS
+# ============================================================================
 
-hooks.Filters.CONFIG_DEFAULTS.add_items(
-    [
-        # Add your new settings that have default values here.
-        # Each new setting is a pair: (setting_name, default_value).
-        # Prefix your setting names with 'REDIS_SSL_'.
-        ("REDIS_SSL_VERSION", __version__),
-    ]
-)
+hooks.Filters.CONFIG_DEFAULTS.add_items([
+    # Disable internal Redis by default when using external Redis
+    ("RUN_REDIS", False),
+    
+    # Redis connection configuration
+    ("REDIS_HOST", ""),
+    ("REDIS_PORT", 6380),
+    ("REDIS_USERNAME", ""),
+    ("REDIS_PASSWORD", ""),
+    ("REDIS_DATABASE", 0),
+    ("REDIS_SSL", True),
+])
 
-hooks.Filters.CONFIG_UNIQUE.add_items(
-    [
-        # Add settings that don't have a reasonable default for all users here.
-        # For instance: passwords, secret keys, etc.
-        # Each new setting is a pair: (setting_name, unique_generated_value).
-        # Prefix your setting names with 'REDIS_SSL_'.
-        # For example:
-        ### ("REDIS_SSL_SECRET_KEY", "{{ 24|random_string }}"),
-    ]
-)
+# ============================================================================
+# 2. DOCKER COMPOSE ENVIRONMENT VARIABLE PATCHES
+# ============================================================================
 
-hooks.Filters.CONFIG_OVERRIDES.add_items(
-    [
-        # Danger zone!
-        # Add values to override settings from Tutor core or other plugins here.
-        # Each override is a pair: (setting_name, new_value). For example:
-        ### ("PLATFORM_NAME", "My platform"),
-    ]
-)
+hooks.Filters.ENV_PATCHES.add_items([
+    
+    # LMS Worker Environment
+    (
+        "local-docker-compose-lms-worker-environment",
+        """
+{% if REDIS_HOST %}
+{% if REDIS_SSL %}
+{% if REDIS_USERNAME and REDIS_PASSWORD %}
+CELERY_BROKER_URL: "rediss://{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+CELERY_RESULT_BACKEND: "rediss://{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+REDIS_URL: "rediss://{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+{% elif REDIS_PASSWORD %}
+CELERY_BROKER_URL: "rediss://:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+CELERY_RESULT_BACKEND: "rediss://:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+REDIS_URL: "rediss://:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+{% else %}
+CELERY_BROKER_URL: "rediss://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+CELERY_RESULT_BACKEND: "rediss://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+REDIS_URL: "rediss://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+{% endif %}
+{% else %}
+{% if REDIS_USERNAME and REDIS_PASSWORD %}
+CELERY_BROKER_URL: "redis://{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+CELERY_RESULT_BACKEND: "redis://{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+REDIS_URL: "redis://{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+{% elif REDIS_PASSWORD %}
+CELERY_BROKER_URL: "redis://:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+CELERY_RESULT_BACKEND: "redis://:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+REDIS_URL: "redis://:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+{% else %}
+CELERY_BROKER_URL: "redis://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+CELERY_RESULT_BACKEND: "redis://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+REDIS_URL: "redis://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+{% endif %}
+{% endif %}
+{% endif %}
+"""
+    ),
+    
+    # CMS Worker Environment (same logic)
+    (
+        "local-docker-compose-cms-worker-environment",
+        """
+{% if REDIS_HOST %}
+{% if REDIS_SSL %}
+{% if REDIS_USERNAME and REDIS_PASSWORD %}
+CELERY_BROKER_URL: "rediss://{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+CELERY_RESULT_BACKEND: "rediss://{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+REDIS_URL: "rediss://{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+{% elif REDIS_PASSWORD %}
+CELERY_BROKER_URL: "rediss://:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+CELERY_RESULT_BACKEND: "rediss://:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+REDIS_URL: "rediss://:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+{% else %}
+CELERY_BROKER_URL: "rediss://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+CELERY_RESULT_BACKEND: "rediss://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+REDIS_URL: "rediss://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+{% endif %}
+{% else %}
+{% if REDIS_USERNAME and REDIS_PASSWORD %}
+CELERY_BROKER_URL: "redis://{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+CELERY_RESULT_BACKEND: "redis://{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+REDIS_URL: "redis://{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+{% elif REDIS_PASSWORD %}
+CELERY_BROKER_URL: "redis://:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+CELERY_RESULT_BACKEND: "redis://:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+REDIS_URL: "redis://:{{ REDIS_PASSWORD }}@{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+{% else %}
+CELERY_BROKER_URL: "redis://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+CELERY_RESULT_BACKEND: "redis://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+REDIS_URL: "redis://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ REDIS_DATABASE }}"
+{% endif %}
+{% endif %}
+{% endif %}
+"""
+    ),
+])
 
+# ============================================================================
+# 3. DJANGO SETTINGS PATCHES
+# ============================================================================
 
-########################################
-# INITIALIZATION TASKS
-########################################
+hooks.Filters.ENV_PATCHES.add_items([
+    (
+        "openedx-common-settings",
+        '''
+# Redis SSL Plugin - Simplified Tutor Config Driven
+import logging
+import ssl  
+import os
 
-# To add a custom initialization task, create a bash script template under:
-# tutorredis_ssl/templates/redis-ssl/tasks/
-# and then add it to the MY_INIT_TASKS list. Each task is in the format:
-# ("<service>", ("<path>", "<to>", "<script>", "<template>"))
-MY_INIT_TASKS: list[tuple[str, tuple[str, ...]]] = [
-    # For example, to add LMS initialization steps, you could add the script template at:
-    # tutorredis_ssl/templates/redis-ssl/tasks/lms/init.sh
-    # And then add the line:
-    ### ("lms", ("redis-ssl", "tasks", "lms", "init.sh")),
-]
+log = logging.getLogger(__name__)
 
+# Read Redis configuration from Tutor config
+REDIS_HOST = "{{ REDIS_HOST }}"
+REDIS_PORT = {{ REDIS_PORT }}
+REDIS_USERNAME = "{{ REDIS_USERNAME }}"
+REDIS_PASSWORD = "{{ REDIS_PASSWORD }}"
+REDIS_DATABASE = {{ REDIS_DATABASE }}
+REDIS_SSL = {{ REDIS_SSL }}
 
-# For each task added to MY_INIT_TASKS, we load the task template
-# and add it to the CLI_DO_INIT_TASKS filter, which tells Tutor to
-# run it as part of the `init` job.
-for service, template_path in MY_INIT_TASKS:
-    full_path: str = str(
-        importlib_resources.files("tutorredis_ssl")
-        / os.path.join("templates", *template_path)
-    )
-    with open(full_path, encoding="utf-8") as init_task_file:
-        init_task: str = init_task_file.read()
-    hooks.Filters.CLI_DO_INIT_TASKS.add_item((service, init_task))
+if REDIS_HOST:
+    log.info("Redis SSL Plugin: Loading external Redis configuration...")
+    
+    # Build the connection string
+    if REDIS_SSL:
+        protocol = "rediss"
+    else:
+        protocol = "redis"
 
+    if REDIS_USERNAME and REDIS_PASSWORD:
+        auth_part = f"{REDIS_USERNAME}:{REDIS_PASSWORD}@"
+    elif REDIS_PASSWORD:
+        auth_part = f":{REDIS_PASSWORD}@"
+    else:
+        auth_part = ""
 
-########################################
-# DOCKER IMAGE MANAGEMENT
-########################################
+    REDIS_CONNECTION_STRING = f"{protocol}://{auth_part}{REDIS_HOST}:{REDIS_PORT}/{REDIS_DATABASE}"
 
+    # Force environment variables (affects Celery workers directly)
+    os.environ["CELERY_BROKER_URL"] = REDIS_CONNECTION_STRING
+    os.environ["CELERY_RESULT_BACKEND"] = REDIS_CONNECTION_STRING
+    os.environ["REDIS_URL"] = REDIS_CONNECTION_STRING
 
-# Images to be built by `tutor images build`.
-# Each item is a quadruple in the form:
-#     ("<tutor_image_name>", ("path", "to", "build", "dir"), "<docker_image_tag>", "<build_args>")
-hooks.Filters.IMAGES_BUILD.add_items(
-    [
-        # To build `myimage` with `tutor images build myimage`,
-        # you would add a Dockerfile to templates/redis-ssl/build/myimage,
-        # and then write:
-        ### (
-        ###     "myimage",
-        ###     ("plugins", "redis-ssl", "build", "myimage"),
-        ###     "docker.io/myimage:{{ REDIS_SSL_VERSION }}",
-        ###     (),
-        ### ),
-    ]
-)
+    # SSL connection pool options (only for SSL connections)
+    if REDIS_SSL:
+        SSL_POOL_OPTIONS = {
+            "ssl_cert_reqs": None,
+            "ssl_check_hostname": False,
+        }
+    else:
+        SSL_POOL_OPTIONS = {}
 
+    # Override ALL cache configurations
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_CONNECTION_STRING,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "CONNECTION_POOL_KWARGS": SSL_POOL_OPTIONS,
+            }
+        },
+        "general": {
+            "KEY_PREFIX": "general",
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_CONNECTION_STRING,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "CONNECTION_POOL_KWARGS": SSL_POOL_OPTIONS,
+            }
+        },
+        "mongo_metadata_inheritance": {
+            "KEY_PREFIX": "mongo_metadata_inheritance",
+            "TIMEOUT": 300,
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_CONNECTION_STRING,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "CONNECTION_POOL_KWARGS": SSL_POOL_OPTIONS,
+            }
+        },
+        "configuration": {
+            "KEY_PREFIX": "configuration",
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_CONNECTION_STRING,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "CONNECTION_POOL_KWARGS": SSL_POOL_OPTIONS,
+            }
+        },
+        "celery": {
+            "KEY_PREFIX": "celery",
+            "TIMEOUT": 7200,
+            "BACKEND": "django_redis.cache.RedisCache", 
+            "LOCATION": REDIS_CONNECTION_STRING,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "CONNECTION_POOL_KWARGS": SSL_POOL_OPTIONS,
+            }
+        },
+        "course_structure_cache": {
+            "KEY_PREFIX": "course_structure",
+            "TIMEOUT": 604800,  # 1 week
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_CONNECTION_STRING,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "CONNECTION_POOL_KWARGS": SSL_POOL_OPTIONS,
+            }
+        },
+        "ora2-storage": {
+            "KEY_PREFIX": "ora2-storage",
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_CONNECTION_STRING,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "CONNECTION_POOL_KWARGS": SSL_POOL_OPTIONS,
+            }
+        }
+    }
 
-# Images to be pulled as part of `tutor images pull`.
-# Each item is a pair in the form:
-#     ("<tutor_image_name>", "<docker_image_tag>")
-hooks.Filters.IMAGES_PULL.add_items(
-    [
-        # To pull `myimage` with `tutor images pull myimage`, you would write:
-        ### (
-        ###     "myimage",
-        ###     "docker.io/myimage:{{ REDIS_SSL_VERSION }}",
-        ### ),
-    ]
-)
+    # Celery configuration
+    CELERY_BROKER_URL = REDIS_CONNECTION_STRING
+    CELERY_RESULT_BACKEND = REDIS_CONNECTION_STRING
 
+    # Celery SSL settings (only for SSL connections)
+    if REDIS_SSL:
+        CELERY_BROKER_USE_SSL = {
+            "ssl_cert_reqs": ssl.CERT_NONE,
+            "ssl_check_hostname": False,
+        }
+        CELERY_REDIS_BACKEND_USE_SSL = {
+            "ssl_cert_reqs": ssl.CERT_NONE,
+            "ssl_check_hostname": False,
+        }
 
-# Images to be pushed as part of `tutor images push`.
-# Each item is a pair in the form:
-#     ("<tutor_image_name>", "<docker_image_tag>")
-hooks.Filters.IMAGES_PUSH.add_items(
-    [
-        # To push `myimage` with `tutor images push myimage`, you would write:
-        ### (
-        ###     "myimage",
-        ###     "docker.io/myimage:{{ REDIS_SSL_VERSION }}",
-        ### ),
-    ]
-)
+    log.info("Redis SSL Plugin: External Redis configuration complete!")
+    log.info(f"Redis Host: {REDIS_HOST}:{REDIS_PORT}")
+    log.info(f"SSL Enabled: {REDIS_SSL}")
+    
+else:
+    log.info("Redis SSL Plugin: No external Redis configured. Using internal Redis.")
+    log.info("To configure external Redis, run:")
+    log.info("   tutor config save --set REDIS_HOST=your-redis-host.com")
+    log.info("   tutor config save --set REDIS_PASSWORD=your-password")
+    log.info("   tutor config save --set REDIS_SSL=true")
+'''
+    ),
+])
 
+__doc__ = """
+Simplified Redis SSL Plugin for Tutor Open edX
 
-########################################
-# TEMPLATE RENDERING
-# (It is safe & recommended to leave
-#  this section as-is :)
-########################################
+This plugin configures Open edX to connect to an external Redis server using
+Tutor's configuration system with template logic for connection string building.
 
-hooks.Filters.ENV_TEMPLATE_ROOTS.add_items(
-    # Root paths for template files, relative to the project root.
-    [
-        str(importlib_resources.files("tutorredis_ssl") / "templates"),
-    ]
-)
-
-hooks.Filters.ENV_TEMPLATE_TARGETS.add_items(
-    # For each pair (source_path, destination_path):
-    # templates at ``source_path`` (relative to your ENV_TEMPLATE_ROOTS) will be
-    # rendered to ``source_path/destination_path`` (relative to your Tutor environment).
-    # For example, ``tutorredis_ssl/templates/redis-ssl/build``
-    # will be rendered to ``$(tutor config printroot)/env/plugins/redis-ssl/build``.
-    [
-        ("redis-ssl/build", "plugins"),
-        ("redis-ssl/apps", "plugins"),
-    ],
-)
-
-
-########################################
-# PATCH LOADING
-# (It is safe & recommended to leave
-#  this section as-is :)
-########################################
-
-# For each file in tutorredis_ssl/patches,
-# apply a patch based on the file's name and contents.
-for path in glob(str(importlib_resources.files("tutorredis_ssl") / "patches" / "*")):
-    with open(path, encoding="utf-8") as patch_file:
-        hooks.Filters.ENV_PATCHES.add_item((os.path.basename(path), patch_file.read()))
-
+Usage:
+1. tutor plugins enable redis-ssl-simple
+2. tutor config save --set REDIS_HOST=your-redis-host.com
+3. tutor config save --set REDIS_PASSWORD=your-password
+4. tutor config save && tutor local reboot
+"""
