@@ -1,4 +1,5 @@
 # Update Redis URLs to use configurable transport
+REDIS_TRANSPORT = "{{ REDIS_TRANSPORT }}"
 CACHES["default"]["LOCATION"] = f"{{ REDIS_TRANSPORT }}://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}"
 CACHES["general"]["LOCATION"] = f"{{ REDIS_TRANSPORT }}://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}"
 
