@@ -1,5 +1,5 @@
 # Update Celery broker URL to use configurable transport
-CELERY_BROKER_URL = f"{{ REDIS_TRANSPORT }}://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}@{% endif %}{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CELERY_REDIS_DB }}"
+CELERY_BROKER_URL = "{{ REDIS_TRANSPORT }}://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}@{% endif %}{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CELERY_REDIS_DB }}"
 
 # Override all cache locations to use configurable transport
 for cache_name in ["default", "general", "mongo_metadata_inheritance", "configuration", "celery", "course_structure_cache", "ora2-storage"]:
