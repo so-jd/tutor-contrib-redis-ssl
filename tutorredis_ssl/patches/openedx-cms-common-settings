@@ -1,0 +1,2 @@
+# Redis transport configuration
+REDIS_TRANSPORT = "{{ REDIS_TRANSPORT }}"
