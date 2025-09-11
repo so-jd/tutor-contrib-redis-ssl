@@ -1,7 +1,12 @@
-# Update Redis URLs to use configurable transport
+# Update all Redis URLs to use configurable transport
 REDIS_TRANSPORT = "{{ REDIS_TRANSPORT }}"
-CACHES["default"]["LOCATION"] = f"{{ REDIS_TRANSPORT }}://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}"
-CACHES["general"]["LOCATION"] = f"{{ REDIS_TRANSPORT }}://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CACHE_REDIS_DB }}"
+
+# Override all cache locations to use configurable transport
+for cache_name in ["default", "general", "mongo_metadata_inheritance", "configuration", "celery", "course_structure_cache", "ora2-storage"]:
+    if cache_name in CACHES:
+        location = CACHES[cache_name]["LOCATION"]
+        if location.startswith("redis://"):
+            CACHES[cache_name]["LOCATION"] = location.replace("redis://", f"{{ REDIS_TRANSPORT }}://", 1)
 
 # Update Celery broker URL
-CELERY_BROKER_URL = f"{{ REDIS_TRANSPORT }}://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CELERY_REDIS_DB }}"
+CELERY_BROKER_URL = f"{{ REDIS_TRANSPORT }}://{% if REDIS_USERNAME and REDIS_PASSWORD %}{{ REDIS_USERNAME }}:{{ REDIS_PASSWORD }}@{% endif %}{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CELERY_REDIS_DB }}"
