@@ -1,6 +1,0 @@
-  lms-worker:
-    environment:
-      CELERY_BROKER_URL: "{{ REDIS_TRANSPORT }}://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CELERY_REDIS_DB }}"
-  cms-worker:  
-    environment:
-      CELERY_BROKER_URL: "{{ REDIS_TRANSPORT }}://{{ REDIS_HOST }}:{{ REDIS_PORT }}/{{ OPENEDX_CELERY_REDIS_DB }}"
